@@ -9,7 +9,7 @@ import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
  *
  * @author MariaCarrie
  */
-public class Datagen2Mongodb {
+public class MongodbSourceTest {
 
     public static void main(String args[]) {
 
@@ -21,15 +21,7 @@ public class Datagen2Mongodb {
         String mongoUser = "flinkuser";
         String mongoPswd = "Inspiry2021";
 
-        String sourceSql = "CREATE TABLE datagen (\n" +
-                " id INT,\n" +
-                " name STRING\n" +
-                ") WITH (\n" +
-                " 'connector' = 'datagen',\n" +
-                " 'rows-per-second'='1',\n" +
-                " 'fields.name.length'='10'\n" +
-                ")";
-        String sinkSql = "CREATE TABLE mongoddb (\n" +
+        String sourceSql = "CREATE TABLE mongoddb (\n" +
                 "  id INT,\n" +
                 "  name STRING\n" +
                 ") WITH (\n" +
@@ -38,15 +30,29 @@ public class Datagen2Mongodb {
                 "  'collection'='flink_mongo_sink_test',\n" +
                 "  'uri'='mongodb://" + mongoUser + ":" +
                   mongoPswd + "@" + mongoServ + ":27017/?replicaSet=rs0&authSource=admin',\n" +
-                "  'maxConnectionIdleTime'='20000',\n" +
-                "  'batchSize'='1'\n" +
+                "  'maxConnectionIdleTime'='20000' \n" +
                 ")";
-        String insertSql = "insert into mongoddb " +
-                "select id,name " +
-                "from datagen";
+        sourceSql = "CREATE TABLE mongoddb (\n" +
+                " _id STRING, \n" +
+                " _class STRING, \n" +
+                " type STRING, \n" +
+                " serialNum STRING, \n" +
+                " `time` TIMESTAMP_LTZ(0), \n" +
+                " receiveTime TIMESTAMP_LTZ(0), \n" +
+                " msg STRING, \n" +
+                " channelId STRING \n" +
+                ") WITH (\n" +
+                "  'connector' = 'mongodb',\n" +
+                "  'database'='dm_admin_logs',\n" +
+                "  'collection'='device_connect_history_stat',\n" +
+                "  'uri'='mongodb://" + mongoUser + ":" +
+                mongoPswd + "@" + mongoServ + ":27017/?replicaSet=rs0&authSource=admin',\n" +
+                "  'maxConnectionIdleTime'='20000' \n" +
+                ")";
+
+        String selectSql = "select _id,type,serialNum,receiveTime,msg from mongoddb where type='disconnect'";
 
         tableEnvironment.executeSql(sourceSql);
-        tableEnvironment.executeSql(sinkSql);
-        tableEnvironment.executeSql(insertSql);
+        tableEnvironment.executeSql(selectSql).print();
     }
 }

@@ -1,6 +1,6 @@
 package org.apache.flink.streaming.connectors.mongodb.sink;
 
-import org.apache.flink.table.api.TableSchema;
+import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.table.connector.ChangelogMode;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
 import org.apache.flink.table.connector.sink.SinkFunctionProvider;
@@ -12,9 +12,9 @@ import org.apache.flink.table.connector.sink.SinkFunctionProvider;
  */
 public class MongodbDynamicTableSink implements DynamicTableSink {
     private final MongodbSinkConf mongodbSinkConf;
-    private final TableSchema tableSchema;
+    private final ResolvedSchema tableSchema;
 
-    public MongodbDynamicTableSink(MongodbSinkConf mongodbSinkConf, TableSchema tableSchema) {
+    public MongodbDynamicTableSink(MongodbSinkConf mongodbSinkConf, ResolvedSchema tableSchema) {
         this.mongodbSinkConf = mongodbSinkConf;
         this.tableSchema = tableSchema;
     }
@@ -28,8 +28,8 @@ public class MongodbDynamicTableSink implements DynamicTableSink {
     @Override
     public SinkRuntimeProvider getSinkRuntimeProvider(Context context) {
         // 初始化数据结构转换器，可以将二进制的数据转换成flink可操作的Row
-        DataStructureConverter converter = context.createDataStructureConverter(this.tableSchema.toRowDataType());
-        return SinkFunctionProvider.of(new MongodbUpsertSinkFunction(this.mongodbSinkConf, this.tableSchema.getFieldNames(), converter));
+        DataStructureConverter converter = context.createDataStructureConverter(this.tableSchema.toPhysicalRowDataType());
+        return SinkFunctionProvider.of(new MongodbUpsertSinkFunction(this.mongodbSinkConf, this.tableSchema.getColumnNames(), converter));
     }
 
     @Override

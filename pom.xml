@@ -18,13 +18,25 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>1.8</java.version>
-        <flink.version>1.12.2</flink.version>
+        <flink.version>1.13.0</flink.version>
         <scala.version>2.11.12</scala.version>
         <scala.binary.version>2.11</scala.binary.version>
         <slf4j.version>1.7.25</slf4j.version>
         <maven.plugin>3.1.1</maven.plugin>
     </properties>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>8</source>
+                    <target>8</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 
 </project>

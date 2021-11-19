@@ -5,13 +5,15 @@ import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.streaming.connectors.mongodb.sink.MongodbDynamicTableSink;
 import org.apache.flink.streaming.connectors.mongodb.sink.MongodbSinkConf;
+import org.apache.flink.streaming.connectors.mongodb.source.MongodbDynamicTableSource;
+import org.apache.flink.streaming.connectors.mongodb.source.MongodbSourceConf;
 import org.apache.flink.streaming.connectors.mongodb.util.ContextUtil;
-import org.apache.flink.table.api.TableSchema;
+import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
-import org.apache.flink.table.factories.DynamicTableFactory;
+import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.factories.DynamicTableSinkFactory;
+import org.apache.flink.table.factories.DynamicTableSourceFactory;
 import org.apache.flink.table.factories.FactoryUtil;
-import org.apache.flink.table.utils.TableSchemaUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,9 +25,9 @@ import java.util.Set;
  *
  * @author MariaCarrie
  */
-public class MongodbDynamicTableSinkFactory implements DynamicTableSinkFactory {
+public class MongodbDynamicTableSinkSourceFactory implements DynamicTableSinkFactory, DynamicTableSourceFactory {
 
-    private static final Logger LOG = LoggerFactory.getLogger(MongodbDynamicTableSinkFactory.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MongodbDynamicTableSinkSourceFactory.class);
     @VisibleForTesting
     public static final String IDENTIFIER = "mongodb";
     public static final ConfigOption<String> DATABASE = ConfigOptions.key("database".toLowerCase())
@@ -57,11 +59,35 @@ public class MongodbDynamicTableSinkFactory implements DynamicTableSinkFactory {
         // 必填、选填参数校验
         helper.validate();
 
-        MongodbSinkConf mongodbSinkConf = new MongodbSinkConf((String) helper.getOptions().get(DATABASE), (String) helper.getOptions().get(COLLECTION_NAME), (String) helper.getOptions().get(URI), ((Integer) helper.getOptions().get(MAX_CONNECTION_IDLE_TIME)).intValue(), ((Integer) helper.getOptions().get(BATCH_SIZE)).intValue());
+        MongodbSinkConf mongodbSinkConf =
+                new MongodbSinkConf((String) helper.getOptions().get(DATABASE),
+                        (String) helper.getOptions().get(COLLECTION_NAME),
+                        (String) helper.getOptions().get(URI),
+                        ((Integer) helper.getOptions().get(MAX_CONNECTION_IDLE_TIME)).intValue(),
+                        ((Integer) helper.getOptions().get(BATCH_SIZE)).intValue());
 
-        TableSchema physicalSchema = TableSchemaUtils.getPhysicalSchema(context.getCatalogTable().getSchema());
+        ResolvedSchema schema = context.getCatalogTable().getResolvedSchema();
         LOG.info("Create dynamic mongoDB table sink: {}.", mongodbSinkConf);
-        return new MongodbDynamicTableSink(mongodbSinkConf, physicalSchema);
+        return new MongodbDynamicTableSink(mongodbSinkConf, schema);
+    }
+
+    @Override
+    public DynamicTableSource createDynamicTableSource(Context context) {
+        // 参数小写转换
+        ContextUtil.transformContext(this, context);
+        FactoryUtil.TableFactoryHelper helper = FactoryUtil.createTableFactoryHelper(this, context);
+        // 必填、选填参数校验
+        helper.validate();
+
+        MongodbSourceConf mongodbSourceConf =
+                new MongodbSourceConf((String) helper.getOptions().get(DATABASE),
+                        (String) helper.getOptions().get(COLLECTION_NAME),
+                        (String) helper.getOptions().get(URI),
+                        ((Integer) helper.getOptions().get(MAX_CONNECTION_IDLE_TIME)).intValue());
+
+        ResolvedSchema schema = context.getCatalogTable().getResolvedSchema();
+        LOG.info("Create dynamic mongoDB table source: {}.", mongodbSourceConf);
+        return new MongodbDynamicTableSource(mongodbSourceConf, schema);
     }
 
     @Override
@@ -85,4 +111,5 @@ public class MongodbDynamicTableSinkFactory implements DynamicTableSinkFactory {
         optionals.add(BATCH_SIZE);
         return optionals;
     }
+
 }

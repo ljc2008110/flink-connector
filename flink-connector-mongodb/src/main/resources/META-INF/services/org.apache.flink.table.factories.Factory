@@ -1,1 +1,1 @@
-org.apache.flink.streaming.connectors.mongodb.MongodbDynamicTableSinkFactory
+org.apache.flink.streaming.connectors.mongodb.MongodbDynamicTableSinkSourceFactory

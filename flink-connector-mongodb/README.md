@@ -338,7 +338,7 @@ public class MongodbDynamicTableSinkFactory implements DynamicTableSinkFactory {
 文件名：
 org.apache.flink.table.factories.Factory
 文件内容：
-org.apache.flink.streaming.connectors.mongodb.MongodbDynamicTableSinkFactory
+org.apache.flink.streaming.connectors.mongodb.MongodbDynamicTableSinkSourceFactory
 ```
 
 - **参数说明**
