@@ -54,7 +54,8 @@ public class MongoClientProvider {
     }
 
     private MongoClient openMongoClient() {
-        return new MongoClient(new MongoClientURI(this.uri, getOptions(this.maxConnectionIdleTime)));
+        return new MongoClient(
+                new MongoClientURI(this.uri, getOptions(this.maxConnectionIdleTime)));
     }
 
     private MongoClientOptions.Builder getOptions(int maxConnectionIdleTime) {

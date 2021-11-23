@@ -23,20 +23,25 @@ public abstract class MongodbBaseSinkFunction<IN> extends RichSinkFunction<IN> i
     private final MongodbSinkConf mongodbSinkConf;
     private transient MongoClientProvider mongoClientProvider;
     private transient MongoClient client;
-    private transient List<Document> batch;
+    private transient MongoDatabase mongoDatabase;
+    transient MongoCollection<Document> mongoCollection;
+    private transient List<Document> insertBatch;
 
     protected MongodbBaseSinkFunction(MongodbSinkConf mongodbSinkConf) {
         this.mongodbSinkConf = mongodbSinkConf;
-        this.mongoClientProvider = new MongoClientProvider(this.mongodbSinkConf.getUri(),
-                this.mongodbSinkConf.getMaxConnectionIdleTime());
     }
 
     @Override
     public void open(Configuration parameters) throws Exception {
         super.open(parameters);
 
+        this.mongoClientProvider = new MongoClientProvider(this.mongodbSinkConf.getUri(),
+                this.mongodbSinkConf.getMaxConnectionIdleTime());
         this.client = mongoClientProvider.getMongoClient();
-        this.batch = new ArrayList();
+        this.mongoDatabase = this.client.getDatabase(this.mongodbSinkConf.getDatabase());
+        this.mongoCollection = mongoDatabase.getCollection(this.mongodbSinkConf.getCollection());
+
+        this.insertBatch = new ArrayList();
     }
 
     @Override
@@ -46,10 +51,17 @@ public abstract class MongodbBaseSinkFunction<IN> extends RichSinkFunction<IN> i
         mongoClientProvider.closeClient();
     }
 
+    private int getCurrentBatchCnt() {
+        return insertBatch.size();
+    }
+
     @Override
     public void invoke(IN value, Context context) throws Exception {
-        this.batch.add(invokeDocument(value, context));
-        if (this.batch.size() >= this.mongodbSinkConf.getBatchSize()) {
+        Document doc = invokeDocument(value, context);
+        if (!processOneInsertOrUpdate(doc)) {
+            this.insertBatch.add(doc);
+        }
+        if (this.getCurrentBatchCnt() >= this.mongodbSinkConf.getBatchSize()) {
             flush();
         }
     }
@@ -64,16 +76,17 @@ public abstract class MongodbBaseSinkFunction<IN> extends RichSinkFunction<IN> i
     }
 
     private void flush() {
-        if (this.batch.isEmpty()) {
+        if (this.insertBatch.isEmpty()) {
             return;
         }
-        MongoDatabase mongoDatabase = this.client.getDatabase(this.mongodbSinkConf.getDatabase());
 
-        MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(this.mongodbSinkConf.getCollection());
-        mongoCollection.insertMany(this.batch);
-
-        this.batch.clear();
+        mongoCollection.insertMany(this.insertBatch);
+        this.insertBatch.clear();
     }
 
     abstract Document invokeDocument(IN paramIN, Context paramContext) throws Exception;
+    
+    abstract boolean existAndUpdate(Document doc);
+
+    abstract boolean processOneInsertOrUpdate(Document doc);
 }

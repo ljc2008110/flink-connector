@@ -297,7 +297,7 @@
     </dependency>
   </dependencies>
   <properties>
-    <mongo.driver.core.version>4.1.0</mongo.driver.core.version>
-    <mongo.driver.version>3.12.6</mongo.driver.version>
+    <mongo.driver.core.version>4.3.1</mongo.driver.core.version>
+    <mongo.driver.version>3.12.10</mongo.driver.version>
   </properties>
 </project>

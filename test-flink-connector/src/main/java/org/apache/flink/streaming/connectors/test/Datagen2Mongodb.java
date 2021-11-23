@@ -29,9 +29,32 @@ public class Datagen2Mongodb {
                 " 'rows-per-second'='1',\n" +
                 " 'fields.name.length'='10'\n" +
                 ")";
+        String ctSql = "create table device_connect_history_stat_mongo (\n" +
+                "  _id STRING,\n" +
+                "  _class STRING,\n" +
+                "  type STRING,\n" +
+                "  serialNum STRING,\n" +
+                "  `time` TIMESTAMP_LTZ(0),\n" +
+                "  receiveTime TIMESTAMP_LTZ(0),\n" +
+                "  msg STRING,\n" +
+                "  channelId STRING,\n" +
+                "  PRIMARY KEY (_id) NOT ENFORCED\n" +
+                ") with (\n" +
+                "  'connector' = 'mongodb-cdc',\n" +
+                "  'hosts' = 'mongodm-0.mongodm-headless.base.svc.cluster.local:27017',\n" +
+                "  'username' = 'flinkuser',\n" +
+                "  'password' = 'Inspiry2021',\n" +
+                "  'database' = 'dm_admin_logs',\n" +
+                "  'collection' = 'device_connect_history_stat',\n" +
+                "  'connection.options' = 'replicaSet=rs0',\n" +
+                "  'errors.tolerance' = 'all',\n" +
+                "  'errors.log.enable' = 'true'\n" +
+                ")";
         String sinkSql = "CREATE TABLE mongoddb (\n" +
-                "  id INT,\n" +
-                "  name STRING\n" +
+                "  _id STRING,\n" +
+                "  id STRING,\n" +
+                "  `name` STRING,\n" +
+                "  PRIMARY KEY (_id) NOT ENFORCED \n" +
                 ") WITH (\n" +
                 "  'connector' = 'mongodb',\n" +
                 "  'database'='dm_admin_logs',\n" +
@@ -42,10 +65,10 @@ public class Datagen2Mongodb {
                 "  'batchSize'='1'\n" +
                 ")";
         String insertSql = "insert into mongoddb " +
-                "select id,name " +
-                "from datagen";
+                "select serialNum, serialNum,type " +
+                "from device_connect_history_stat_mongo";
 
-        tableEnvironment.executeSql(sourceSql);
+        tableEnvironment.executeSql(ctSql);
         tableEnvironment.executeSql(sinkSql);
         tableEnvironment.executeSql(insertSql);
     }
